@@ -14,14 +14,14 @@ You can upload your PDFs with custom data & ask questions about the data in the 
 
 For each question, you will get two answers:
 
-- one using RAG (Couchbase logo)
-- one using pure LLM - OpenAI (🤖).
+- one using RAG (Couchbase logo) and Cloudflare
+- one using pure LLM - OpenAI (🤖) or Cloudflare
 
-For RAG, we are using LangChain, Couchbase Vector Search & OpenAI. We fetch parts of the PDF relevant to the question using Vector search & add it as the context to the LLM. The LLM is instructed to answer based on the context from the Vector Store.
+For RAG, we are using LangChain, Couchbase Vector Search & Cloudflare Workers AI / OpenAI. We fetch parts of the PDF relevant to the question using Vector search & add it as the context to the LLM. The LLM is instructed to answer based on the context from the Vector Store.
 
 All LLM responses are cached in the collection specified. If the same exact question is asked again, the results are fetched from the Cache instead of calling the LLM.
 
-> Note: The streaming of Cached responses is purely for visual experience as OpenAI integration cannot stream responses from the Cache due to a known [issue](https://github.com/langchain-ai/langchain/issues/9762).
+> Note: The streaming of Cached responses is purely for visual experience as Cloudflare Workers AI / OpenAI integration cannot stream responses from the Cache due to a known [issue](https://github.com/langchain-ai/langchain/issues/9762).
 
 ### How to Run
 
@@ -45,6 +45,8 @@ All LLM responses are cached in the collection specified. If the same exact ques
   INDEX_NAME = "<name_of_fts_index_with_vector_support>"
   AUTH_ENABLED = "True/False" # enables authentication for the streamlit app using LOGIN_PASSWORD
   LOGIN_PASSWORD = "<password to access the streamlit app>"
+  CLOUDFLARE_ACCOUNT_ID = ""
+  CLOUDFLARE_API_TOKEN = "pW-"
   ```
 
 - #### Create the Search Index on Full Text Service
