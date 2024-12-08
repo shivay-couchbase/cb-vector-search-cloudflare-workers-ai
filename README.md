@@ -1,4 +1,4 @@
-## RAG Demo using Couchbase, Streamlit, LangChain, and OpenAI
+## RAG Demo using Couchbase, Streamlit, LangChain, and Cloudflare
 
 This is a demo app built to chat with your custom PDFs using the vector search capabilities of Couchbase to augment the OpenAI results in a Retrieval-Augmented-Generation (RAG) model.
 
