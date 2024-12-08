@@ -1,10 +1,6 @@
-import tempfile
-import langchain
-langchain.verbose = False
-langchain.debug = False
-langchain.llm_cache = False
 
-# from cloudflare import Cloudflare
+
+import tempfile
 from langchain_couchbase.vectorstores import CouchbaseVectorStore
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.document_loaders import PyPDFLoader
@@ -17,36 +13,13 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.globals import set_llm_cache
 from langchain_couchbase.cache import CouchbaseCache
-import time
 from langchain_community.llms.cloudflare_workersai import CloudflareWorkersAI
-from langchain_community.embeddings.cloudflare_workersai import (
-    CloudflareWorkersAIEmbeddings,
-)
+import time
+
+cf_account_id=""
+cf_api_token=""
 
 
-import getpass
-
-# my_account_id = "57b4618d5bb2e398ebcffdc9e1e92418"
-# my_api_token = "pW-7ey67BNmb8t2SuX3wTIU3SwfwrVGjFOsZm2wA"
-
-# client = Cloudflare(api_token=my_api_token)
-
-
-# result = client.workers.ai.run(
-#     "@cf/meta/llama-3-8b-instruct" ,
-#     account_id=my_account_id,
-#     messages=[
-#         {"role": "system", "content": """
-#             You are a productivity assistant for users of Jupyter notebooks for both Mac and Windows users.
-
-#             Respond in Markdown."""
-#         },
-#         {"role": "user", "content": "How do I use keyboard shortcuts to execute cells?"}
-#     ]
-# )
-
-
-# print(result)
 def parse_bool(value: str):
     """Parse boolean values from environment variables"""
     return value.lower() in ("yes", "true", "t", "1")
@@ -104,15 +77,15 @@ def get_vector_store(
 
 
 # @st.cache_resource(show_spinner="Connecting to Cache")
-# def get_cache(_cluster, db_bucket, db_scope, cache_collection):
-#     """Return the Couchbase cache"""
-#     cache = CouchbaseCache(
-#         cluster=_cluster,
-#         bucket_name=db_bucket,
-#         scope_name=db_scope,
-#         collection_name=cache_collection,
-#     )
-#     return cache
+def get_cache(_cluster, db_bucket, db_scope, cache_collection):
+    """Return the Couchbase cache"""
+    cache = CouchbaseCache(
+        cluster=_cluster,
+        bucket_name=db_bucket,
+        scope_name=db_scope,
+        collection_name=cache_collection,
+    )
+    return cache
 
 
 # @st.cache_resource(show_spinner="Connecting to Couchbase")
@@ -180,8 +153,6 @@ if __name__ == "__main__":
         DB_SCOPE = os.getenv("DB_SCOPE")
         DB_COLLECTION = os.getenv("DB_COLLECTION")
         INDEX_NAME = os.getenv("INDEX_NAME")
-        cf_account_id =  st.secrets["CLOUDFLARE_ACCOUNT_ID"]
-        cf_api_token =  st.secrets["CLOUDFLARE_API_TOKEN"]
         # CACHE_COLLECTION = os.getenv("CACHE_COLLECTION")
 
         # Ensure that all environment variables are set
@@ -193,9 +164,6 @@ if __name__ == "__main__":
         check_environment_variable("DB_SCOPE")
         check_environment_variable("DB_COLLECTION")
         check_environment_variable("INDEX_NAME")
-        check_environment_variable("CLOUDFLARE_ACCOUNT_ID")
-        check_environment_variable("CLOUDFLARE_API_TOKEN")
-
         # check_environment_variable("CACHE_COLLECTION")
 
         # Use OpenAI Embeddings
@@ -216,7 +184,7 @@ if __name__ == "__main__":
         # Use couchbase vector store as a retriever for RAG
         retriever = vector_store.as_retriever()
 
-        # # Set the LLM cache
+        # Set the LLM cache
         # cache = get_cache(cluster, DB_BUCKET, DB_SCOPE, CACHE_COLLECTION)
         # set_llm_cache(cache)
 
@@ -228,13 +196,8 @@ if __name__ == "__main__":
 
         prompt = ChatPromptTemplate.from_template(template)
 
-        # Use Cloudflare Workers AI as the LLM for the RAG
-        # llm = ChatOpenAI(temperature=0, model="gpt-4-1106-preview", streaming=True)
-
-        llm = CloudflareWorkersAI(account_id=cf_account_id, api_token=cf_api_token, model='@cf/meta/llama-2-7b-chat-int8')
-
-   
-        # llm = CloudflareWorkersAI(account_id=my_account_id, api_token=my_api_token, model="@cf/meta/llama-3.1-8b-instruct" )
+        # Use OpenAI GPT 4 as the LLM for the RAG
+        llm = CloudflareWorkersAI(account_id=cf_account_id, api_token=cf_api_token, model='@cf/meta/llama-3.1-8b-instruct')
 
         # RAG chain
         chain = (
@@ -251,10 +214,7 @@ if __name__ == "__main__":
 
         prompt_without_rag = ChatPromptTemplate.from_template(template_without_rag)
 
-        llm_without_rag = ChatOpenAI(model="gpt-4-1106-preview", streaming=True)
-
-      
-        # llm_without_rag = CloudflareWorkersAI(account_id=my_account_id, api_token=my_api_token)
+        llm_without_rag = CloudflareWorkersAI(account_id=cf_account_id, api_token=cf_api_token, model='@cf/meta/llama-2-7b-chat-int8')
 
         chain_without_rag = (
             {"question": RunnablePassthrough()}
@@ -330,7 +290,7 @@ if __name__ == "__main__":
                 {"role": "user", "content": question, "avatar": "👤"}
             )
 
-            #Add placeholder for streaming the response
+            # Add placeholder for streaming the response
             with st.chat_message("assistant", avatar=couchbase_logo):
                 # Get the response from the RAG & stream it
                 # In order to cache the response, we need to invoke the chain and cache the response locally as OpenAI does not support it yet
